@@ -1,0 +1,5 @@
+flask>=3.0.0
+anthropic
+groq
+python-docx
+Pillow>=10.0.0
