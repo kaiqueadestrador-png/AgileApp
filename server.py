@@ -109,35 +109,43 @@ def add_step_table(doc, itens):
     if tblPr is None:
         tblPr = OxmlElement("w:tblPr")
         tbl.insert(0, tblPr)
+    # Largura total da tabela
     tblW = OxmlElement("w:tblW")
     tblW.set(qn("w:w"), "8880")
     tblW.set(qn("w:type"), "dxa")
     tblPr.append(tblW)
+    # Layout fixo: garante que as larguras de coluna sejam respeitadas
+    tblLayout = OxmlElement("w:tblLayout")
+    tblLayout.set(qn("w:type"), "fixed")
+    tblPr.append(tblLayout)
     for i, item in enumerate(itens):
+        # Coluna do numero: estreita (600 dxa = ~1.06 cm)
         cell_n = table.cell(i, 0)
         set_cell_bg(cell_n, "E87722")
         set_cell_borders(cell_n, color="E87722")
         tcPr_n = cell_n._tc.get_or_add_tcPr()
         tcW_n = OxmlElement("w:tcW")
-        tcW_n.set(qn("w:w"), "680")
+        tcW_n.set(qn("w:w"), "600")
         tcW_n.set(qn("w:type"), "dxa")
         tcPr_n.append(tcW_n)
         p_n = cell_n.paragraphs[0]
         p_n.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_n.paragraph_format.space_before = Pt(4)
-        p_n.paragraph_format.space_after  = Pt(4)
+        p_n.paragraph_format.space_before = Pt(6)
+        p_n.paragraph_format.space_after  = Pt(6)
         add_run(p_n, str(i + 1), bold=True, size=12, color=BRANCO)
+        # Coluna do texto: restante
         cell_t = table.cell(i, 1)
         tcPr_t = cell_t._tc.get_or_add_tcPr()
         tcW_t = OxmlElement("w:tcW")
-        tcW_t.set(qn("w:w"), "8200")
+        tcW_t.set(qn("w:w"), "8280")
         tcW_t.set(qn("w:type"), "dxa")
         tcPr_t.append(tcW_t)
         set_cell_bg(cell_t, "F2F2F2")
         set_cell_borders(cell_t, color="CCCCCC")
         p_t = cell_t.paragraphs[0]
-        p_t.paragraph_format.space_before = Pt(4)
-        p_t.paragraph_format.space_after  = Pt(4)
+        p_t.paragraph_format.space_before = Pt(5)
+        p_t.paragraph_format.space_after  = Pt(5)
+        p_t.paragraph_format.left_indent  = Pt(4)
         add_run(p_t, item, size=11)
     add_space(doc, 6)
 
@@ -183,19 +191,18 @@ def build_header_footer(doc):
     rod = footer.paragraphs[0]
     add_border_bottom(rod, "E87722", size=6)
     rod.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    add_run(rod, "Agile Dog  |  Kaique Rocha  |  Santo Andre, SP", size=9, color=CINZA)
+    add_run(rod, "Agile Dog  •  Desenvolvido por Kaique Rocha  •  v1.0", size=9, color=CINZA)
 
 
 # ─── NOVA FUNCAO: INSERCAO DE FOTO NO DOCUMENTO ──────────────────────────────
 
 def inserir_foto_protocolo(doc, foto_bytes):
     """
-    Insere foto do animal no documento com moldura azul.
-    Redimensiona proporcionalmente, converte para JPEG, nao distorce.
+    Insere foto do animal: recorte quadrado centralizado, moldura elegante azul.
     """
     img = PILImage.open(BytesIO(foto_bytes))
 
-    # Converter para RGB (lida com PNG com canal alpha)
+    # Converter para RGB
     if img.mode in ("RGBA", "P", "LA"):
         img = img.convert("RGB")
 
@@ -211,36 +218,89 @@ def inserir_foto_protocolo(doc, foto_bytes):
                         img = img.rotate(rotacoes[val], expand=True)
                     break
     except Exception:
-        pass  # EXIF opcional
+        pass
 
-    # Redimensionar: max 800px de largura
-    max_w = 800
-    if img.width > max_w:
-        ratio = max_w / img.width
-        img = img.resize((max_w, int(img.height * ratio)), PILImage.LANCZOS)
+    # Recorte quadrado centralizado
+    w, h = img.size
+    lado = min(w, h)
+    esq  = (w - lado) // 2
+    top  = (h - lado) // 2
+    img  = img.crop((esq, top, esq + lado, top + lado))
+
+    # Redimensionar para 600x600
+    img = img.resize((600, 600), PILImage.LANCZOS)
 
     # Salvar em temp
     tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-    img.save(tmp.name, "JPEG", quality=85)
+    img.save(tmp.name, "JPEG", quality=90)
     tmp.close()
 
-    # Inserir em tabela com moldura azul
-    add_space(doc, 4)
-    table = doc.add_table(rows=1, cols=1)
-    table.style = "Table Grid"
-    cell = table.cell(0, 0)
-    set_cell_bg(cell, "FFFFFF")
-    set_cell_borders(cell, color="1A3A5C")
+    # Moldura elegante: tabela 3x3 simulando padding + borda dupla
+    add_space(doc, 6)
 
-    p = cell.paragraphs[0]
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(6)
-    p.paragraph_format.space_after  = Pt(6)
-    run = p.add_run()
+    # Tabela externa (borda laranja fina)
+    t_ext = doc.add_table(rows=1, cols=1)
+    t_ext.style = "Table Grid"
+    c_ext = t_ext.cell(0, 0)
+    set_cell_bg(c_ext, "E87722")
+    set_cell_borders(c_ext, color="E87722")
+    tcPr_e = c_ext._tc.get_or_add_tcPr()
+    tcW_e = OxmlElement("w:tcW")
+    tcW_e.set(qn("w:w"), "4680")
+    tcW_e.set(qn("w:type"), "dxa")
+    tcPr_e.append(tcW_e)
+
+    # Paragrafo interno com a imagem
+    p_ext = c_ext.paragraphs[0]
+    p_ext.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_ext.paragraph_format.space_before = Pt(4)
+    p_ext.paragraph_format.space_after  = Pt(4)
+
+    # Tabela interna (fundo branco, moldura azul escuro)
+    t_int = doc.add_table(rows=1, cols=1)
+    t_int.style = "Table Grid"
+    c_int = t_int.cell(0, 0)
+    set_cell_bg(c_int, "FFFFFF")
+
+    # Borda azul mais grossa
+    tc_int    = c_int._tc
+    tcPr_int  = tc_int.get_or_add_tcPr()
+    tcBorders = OxmlElement("w:tcBorders")
+    for side in ["top", "left", "bottom", "right"]:
+        el = OxmlElement(f"w:{side}")
+        el.set(qn("w:val"),   "single")
+        el.set(qn("w:sz"),    "18")
+        el.set(qn("w:space"), "0")
+        el.set(qn("w:color"), "1A3A5C")
+        tcBorders.append(el)
+    tcPr_int.append(tcBorders)
+
+    tcW_i = OxmlElement("w:tcW")
+    tcW_i.set(qn("w:w"), "4536")
+    tcW_i.set(qn("w:type"), "dxa")
+    tcPr_int.append(tcW_i)
+
+    p_int = c_int.paragraphs[0]
+    p_int.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_int.paragraph_format.space_before = Pt(0)
+    p_int.paragraph_format.space_after  = Pt(0)
+    run = p_int.add_run()
     run.add_picture(tmp.name, width=Cm(8))
 
     os.unlink(tmp.name)
-    add_space(doc, 6)
+
+    # Centralizar as duas tabelas
+    for t in [t_ext, t_int]:
+        tbl   = t._tbl
+        tblPr = tbl.find(qn("w:tblPr"))
+        if tblPr is None:
+            tblPr = OxmlElement("w:tblPr")
+            tbl.insert(0, tblPr)
+        jc = OxmlElement("w:jc")
+        jc.set(qn("w:val"), "center")
+        tblPr.append(jc)
+
+    add_space(doc, 8)
 
 
 # ─── TRANSCRICAO (identica ao app.py original) ───────────────────────────────
