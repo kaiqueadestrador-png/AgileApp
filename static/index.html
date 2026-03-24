@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agile Dog">
+<meta name="theme-color" content="#1A3A5C">
+<link rel="manifest" href="/manifest.json">
+<title>Agile Dog</title>
+
+<style>
+  :root {
+    --azul:       #1A3A5C;
+    --azul-meio:  #1E4D7B;
+    --azul-claro: #D6E4F0;
+    --laranja:    #E87722;
+    --laranja-s:  #FF8C35;
+    --branco:     #FFFFFF;
+    --cinza-f:    #F0F4F8;
+    --cinza-m:    #A8C4E0;
+    --cinza-t:    #6B8BA4;
+    --verde:      #2E7D32;
+    --vermelho:   #C62828;
+    --sombra:     0 4px 24px rgba(26,58,92,.18);
+    --radius:     16px;
+    --safe-top:   env(safe-area-inset-top, 0px);
+    --safe-bot:   env(safe-area-inset-bottom, 0px);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    background: var(--azul);
+    color: var(--branco);
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── ESTRUTURA ── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    padding: calc(var(--safe-top) + 18px) 24px 16px;
+    background: var(--azul);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid rgba(232,119,34,.35);
+    flex-shrink: 0;
+  }
+
+  .logo-paw { font-size: 26px; }
+
+  .logo-text { flex: 1; }
+  .logo-text strong {
+    display: block;
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: var(--branco);
+  }
+  .logo-text span {
+    font-size: 11px;
+    color: var(--cinza-m);
+    letter-spacing: .5px;
+  }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--cinza-f);
+    color: var(--azul);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── TELAS (views) ── */
+  .view { display: none; padding: 24px 20px; min-height: 100%; }
+  .view.active { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── HOME ── */
+  .home-hero {
+    background: var(--azul);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--branco);
+  }
+  .home-hero .paw-big { font-size: 52px; margin-bottom: 12px; }
+  .home-hero h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .home-hero p  { font-size: 13px; color: var(--cinza-m); margin-top: 6px; line-height: 1.5; }
+
+  .btn-primary {
+    width: 100%;
+    padding: 18px;
+    background: var(--laranja);
+    color: var(--branco);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(232,119,34,.4);
+    transition: transform .1s, box-shadow .1s;
+    -webkit-appearance: none;
+  }
+  .btn-primary:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(232,119,34,.3); }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 16px;
+    background: var(--branco);
+    color: var(--azul);
+    border: 2px solid var(--azul-claro);
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+    -webkit-appearance: none;
+  }
+  .btn-secondary:active { background: var(--cinza-f); }
+
+  .btn-danger {
+    width: 100%;
+    padding: 16px;
+    background: #FFF3F3;
+    color: var(--vermelho);
+    border: 2px solid #FFCDD2;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--branco);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--sombra);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--cinza-t);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── GRAVACAO ── */
+  #visualizer {
+    width: 100%;
+    height: 72px;
+    border-radius: 10px;
+    background: var(--azul);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .rec-timer {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 200;
+    letter-spacing: 4px;
+    color: var(--azul);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rec-status {
+    text-align: center;
+    font-size: 13px;
+    color: var(--cinza-t);
+    margin-top: 4px;
+    min-height: 18px;
+  }
+
+  .rec-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--vermelho);
+    margin-right: 6px;
+    animation: blink 1s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+  .rec-dot.paused { animation: none; opacity: .4; }
+
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn-secondary,
+  .btn-row .btn-primary { flex: 1; }
+
+  /* ── FOTO ── */
+  #camera-preview {
+    width: 100%;
+    border-radius: 12px;
+    background: #000;
+    display: block;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+  }
+  #foto-preview {
+    width: 100%;
+    border-radius: 12px;
+    border: 3px solid var(--azul);
+    display: none;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+  }
+  #camera-canvas { display: none; }
+
+  /* ── PROGRESSO ── */
+  .progress-steps { display: flex; flex-direction: column; gap: 12px; }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--branco);
+    border-radius: 12px;
+    border: 2px solid var(--azul-claro);
+    transition: border-color .3s, background .3s;
+  }
+  .step-item.done   { border-color: #A5D6A7; background: #F1F8F1; }
+  .step-item.active { border-color: var(--laranja); background: #FFF8F3; }
+  .step-item.error  { border-color: #FFCDD2; background: #FFF3F3; }
+
+  .step-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: var(--cinza-f);
+    flex-shrink: 0;
+    transition: background .3s;
+  }
+  .step-item.done   .step-icon { background: #C8E6C9; }
+  .step-item.active .step-icon { background: #FFE0C2; }
+
+  .step-label { font-size: 14px; font-weight: 600; color: var(--azul); }
+  .step-sub   { font-size: 12px; color: var(--cinza-t); margin-top: 2px; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--cinza-m);
+    border-top-color: var(--laranja);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESULTADO ── */
+  .result-header {
+    background: var(--azul);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    color: var(--branco);
+  }
+  .result-header .check { font-size: 44px; margin-bottom: 8px; }
+  .result-header h2 { font-size: 20px; font-weight: 700; }
+  .result-header p  { font-size: 13px; color: var(--cinza-m); margin-top: 4px; }
+
+  .doc-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: var(--branco);
+    border: 2px solid var(--azul-claro);
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--azul);
+    transition: border-color .15s, background .15s;
+  }
+  .doc-btn:active { background: var(--cinza-f); border-color: var(--azul); }
+  .doc-icon { font-size: 26px; }
+  .doc-info strong { display: block; font-size: 14px; font-weight: 700; }
+  .doc-info span   { font-size: 12px; color: var(--cinza-t); }
+  .doc-arrow { margin-left: auto; font-size: 18px; color: var(--cinza-t); }
+
+  /* ── ALERTA ── */
+  .alerta {
+    display: none;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .alerta.erro  { background: #FFF3F3; color: var(--vermelho); border: 1.5px solid #FFCDD2; }
+  .alerta.info  { background: var(--azul-claro); color: var(--azul); border: 1.5px solid var(--cinza-m); }
+  .alerta.show  { display: block; }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 10px 20px calc(var(--safe-bot) + 10px);
+    background: var(--azul);
+    border-top: 1px solid rgba(255,255,255,.08);
+    text-align: center;
+    font-size: 11px;
+    color: var(--cinza-t);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <span class="logo-paw">🐾</span>
+    <div class="logo-text">
+      <strong>AGILE DOG</strong>
+      <span>Equilibrio dos Reforcamentos</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── VIEW: HOME ─────────────────────────────── -->
+    <div id="view-home" class="view active">
+      <div class="home-hero">
+        <div class="paw-big">🐾</div>
+        <h1>Nova Sessao</h1>
+        <p>Grave a aula, fotografe o animal e<br>receba os documentos prontos.</p>
+      </div>
+      <button class="btn-primary" onclick="iniciarGravacao()">
+        🎙 Iniciar Gravacao
+      </button>
+      <div class="alerta info show">
+        Certifique-se de estar conectado ao servidor na mesma rede Wi-Fi antes de iniciar.
+      </div>
+    </div>
+
+    <!-- ── VIEW: GRAVACAO ─────────────────────────── -->
+    <div id="view-gravacao" class="view">
+      <div class="card">
+        <div class="card-title">Gravando aula</div>
+        <canvas id="visualizer"></canvas>
+        <div class="rec-timer" id="rec-timer">00:00</div>
+        <div class="rec-status" id="rec-status">
+          <span class="rec-dot" id="rec-dot"></span>Gravando...
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" id="btn-pausar" onclick="togglePausa()">⏸ Pausar</button>
+        <button class="btn-primary"   onclick="finalizarGravacao()">⏹ Finalizar</button>
+      </div>
+      <button class="btn-danger" onclick="cancelarGravacao()">✕ Cancelar</button>
+    </div>
+
+    <!-- ── VIEW: FOTO ─────────────────────────────── -->
+    <div id="view-foto" class="view">
+      <div class="card">
+        <div class="card-title">Foto do animal (opcional)</div>
+        <video id="camera-preview" autoplay playsinline muted></video>
+        <img  id="foto-preview" alt="Foto capturada">
+        <canvas id="camera-canvas"></canvas>
+      </div>
+
+      <div id="foto-controles-camera">
+        <button class="btn-primary" onclick="capturarFoto()">📷 Fotografar</button>
+        <button class="btn-secondary" onclick="pularFoto()">Pular — continuar sem foto</button>
+      </div>
+
+      <div id="foto-controles-preview" style="display:none">
+        <button class="btn-primary"    onclick="confirmarFoto()">✓ Usar esta foto</button>
+        <button class="btn-secondary"  onclick="refazerFoto()">↩ Refazer</button>
+        <button class="btn-secondary"  onclick="pularFoto()">Continuar sem foto</button>
+      </div>
+    </div>
+
+    <!-- ── VIEW: PROCESSANDO ──────────────────────── -->
+    <div id="view-processando" class="view">
+      <div class="card">
+        <div class="card-title">Processando sessao</div>
+        <div class="progress-steps">
+          <div class="step-item" id="step-audio">
+            <div class="step-icon">🎙</div>
+            <div>
+              <div class="step-label">Transcricao</div>
+              <div class="step-sub" id="step-audio-sub">Aguardando...</div>
+            </div>
+          </div>
+          <div class="step-item" id="step-ia">
+            <div class="step-icon">🧠</div>
+            <div>
+              <div class="step-label">Analise com IA</div>
+              <div class="step-sub" id="step-ia-sub">Aguardando...</div>
+            </div>
+          </div>
+          <div class="step-item" id="step-docs">
+            <div class="step-icon">📄</div>
+            <div>
+              <div class="step-label">Gerando documentos</div>
+              <div class="step-sub" id="step-docs-sub">Aguardando...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alerta erro" id="alerta-erro"></div>
+    </div>
+
+    <!-- ── VIEW: RESULTADO ────────────────────────── -->
+    <div id="view-resultado" class="view">
+      <div class="result-header">
+        <div class="check">✅</div>
+        <h2 id="result-titulo">Documentos prontos!</h2>
+        <p id="result-sub">Sessao processada com sucesso.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Baixar documentos</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <a id="link-protocolo" class="doc-btn" href="#" download>
+            <span class="doc-icon">📋</span>
+            <div class="doc-info">
+              <strong>Protocolo de Treinamento</strong>
+              <span>Exercicios e orientacoes tecnicas</span>
+            </div>
+            <span class="doc-arrow">↓</span>
+          </a>
+          <a id="link-relatorio" class="doc-btn" href="#" download>
+            <span class="doc-icon">📊</span>
+            <div class="doc-info">
+              <strong>Relatorio de Desempenho</strong>
+              <span>Resumo e evolucao da sessao</span>
+            </div>
+            <span class="doc-arrow">↓</span>
+          </a>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="novaSessao()">
+        🐾 Nova Sessao
+      </button>
+    </div>
+
+  </main>
+
+  <footer>Agile Dog · Kaique Rocha · Santo Andre, SP</footer>
+</div>
+
+<!-- ─────────────────────── JAVASCRIPT ─────────────────────── -->
+<script>
+// ── Estado global ──────────────────────────────────────────
+let mediaRecorder  = null;
+let audioChunks    = [];
+let audioBlob      = null;
+let fotoBlob       = null;
+let cameraStream   = null;
+let fotoCapturada  = false;
+let timerInterval  = null;
+let segundos       = 0;
+let pausado        = false;
+let animCanvas     = null;
+let analyser       = null;
+let audioCtx       = null;
+let sourceNode     = null;
+
+// ── Service Worker (PWA) ────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
+// ── Navegacao entre views ───────────────────────────────────
+function mostrarView(id) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+// ── HOME → GRAVACAO ─────────────────────────────────────────
+async function iniciarGravacao() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Visualizador de audio
+    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    analyser  = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    sourceNode = audioCtx.createMediaStreamSource(stream);
+    sourceNode.connect(analyser);
+    iniciarVisualizador();
+
+    // MediaRecorder — compativel com iOS Safari (audio/mp4)
+    const mimeType = MediaRecorder.isTypeSupported("audio/mp4")
+      ? "audio/mp4"
+      : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+
+    const options = mimeType ? { mimeType } : {};
+    mediaRecorder = new MediaRecorder(stream, options);
+    audioChunks   = [];
+
+    mediaRecorder.addEventListener("dataavailable", e => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    });
+
+    mediaRecorder.start(1000); // chunks a cada 1s para iOS
+    iniciarTimer();
+    mostrarView("view-gravacao");
+
+  } catch (err) {
+    alert("Permissao de microfone negada ou nao disponivel.\n\n" + err.message);
+  }
+}
+
+// ── Temporizador ────────────────────────────────────────────
+function iniciarTimer() {
+  segundos = 0;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!pausado) {
+      segundos++;
+      atualizarTimer();
+    }
+  }, 1000);
+}
+
+function atualizarTimer() {
+  const m = String(Math.floor(segundos / 60)).padStart(2, "0");
+  const s = String(segundos % 60).padStart(2, "0");
+  document.getElementById("rec-timer").textContent = m + ":" + s;
+}
+
+// ── Pausar / Retomar ─────────────────────────────────────────
+function togglePausa() {
+  if (!mediaRecorder) return;
+  pausado = !pausado;
+  const btn = document.getElementById("btn-pausar");
+  const dot = document.getElementById("rec-dot");
+  const status = document.getElementById("rec-status");
+
+  if (pausado) {
+    mediaRecorder.pause();
+    btn.textContent = "▶ Retomar";
+    dot.classList.add("paused");
+    status.innerHTML = '<span class="rec-dot paused"></span>Em pausa';
+  } else {
+    mediaRecorder.resume();
+    btn.textContent = "⏸ Pausar";
+    dot.classList.remove("paused");
+    status.innerHTML = '<span class="rec-dot"></span>Gravando...';
+  }
+}
+
+// ── Finalizar gravacao ───────────────────────────────────────
+function finalizarGravacao() {
+  if (!mediaRecorder) return;
+  clearInterval(timerInterval);
+
+  mediaRecorder.addEventListener("stop", () => {
+    const mimeType = mediaRecorder.mimeType || "audio/mp4";
+    audioBlob = new Blob(audioChunks, { type: mimeType });
+    pararVisualizador();
+    pararCamera();
+    abrirCamera();
+  }, { once: true });
+
+  mediaRecorder.stop();
+  mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+}
+
+// ── Cancelar ────────────────────────────────────────────────
+function cancelarGravacao() {
+  if (!confirm("Cancelar a gravacao atual?")) return;
+  clearInterval(timerInterval);
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  pararVisualizador();
+  audioBlob = null; audioChunks = [];
+  mostrarView("view-home");
+}
+
+// ── Visualizador de audio ────────────────────────────────────
+function iniciarVisualizador() {
+  const canvas = document.getElementById("visualizer");
+  const ctx    = canvas.getContext("2d");
+  const buf    = new Uint8Array(analyser.frequencyBinCount);
+
+  function desenhar() {
+    animCanvas = requestAnimationFrame(desenhar);
+    analyser.getByteFrequencyData(buf);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#1A3A5C";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const barW = (canvas.width / buf.length) * 2.2;
+    let x = 0;
+    for (let i = 0; i < buf.length; i++) {
+      const h = (buf[i] / 255) * canvas.height;
+      const ratio = buf[i] / 255;
+      // Cor degradê: azul → laranja
+      const r = Math.round(26  + (232 - 26)  * ratio);
+      const g = Math.round(58  + (119 - 58)  * ratio);
+      const b = Math.round(92  + (34  - 92)  * ratio);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(x, canvas.height - h, barW - 1, h);
+      x += barW;
+    }
+  }
+  desenhar();
+}
+
+function pararVisualizador() {
+  if (animCanvas) { cancelAnimationFrame(animCanvas); animCanvas = null; }
+}
+
+// ── CAMERA ──────────────────────────────────────────────────
+async function abrirCamera() {
+  fotoBlob = null; fotoCapturada = false;
+  document.getElementById("foto-preview").style.display = "none";
+  document.getElementById("camera-preview").style.display = "block";
+  document.getElementById("foto-controles-camera").style.display = "block";
+  document.getElementById("foto-controles-preview").style.display = "none";
+  mostrarView("view-foto");
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 } }
+    });
+    document.getElementById("camera-preview").srcObject = cameraStream;
+  } catch (err) {
+    // Sem camera: pular diretamente
+    pularFoto();
+  }
+}
+
+function capturarFoto() {
+  const video  = document.getElementById("camera-preview");
+  const canvas = document.getElementById("camera-canvas");
+  canvas.width  = video.videoWidth  || 1280;
+  canvas.height = video.videoHeight || 720;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+
+  canvas.toBlob(blob => {
+    fotoBlob = blob;
+    const url = URL.createObjectURL(blob);
+    const preview = document.getElementById("foto-preview");
+    preview.src = url;
+    preview.style.display = "block";
+    document.getElementById("camera-preview").style.display = "none";
+    document.getElementById("foto-controles-camera").style.display = "none";
+    document.getElementById("foto-controles-preview").style.display = "flex";
+    document.getElementById("foto-controles-preview").style.flexDirection = "column";
+    document.getElementById("foto-controles-preview").style.gap = "10px";
+    pararCamera();
+  }, "image/jpeg", 0.85);
+}
+
+function confirmarFoto() {
+  fotoCapturada = true;
+  iniciarPipeline();
+}
+
+function refazerFoto() {
+  fotoBlob = null;
+  document.getElementById("foto-preview").style.display = "none";
+  document.getElementById("camera-preview").style.display = "block";
+  document.getElementById("foto-controles-camera").style.display = "block";
+  document.getElementById("foto-controles-preview").style.display = "none";
+  abrirCamera();
+}
+
+function pularFoto() {
+  fotoBlob = null; fotoCapturada = false;
+  pararCamera();
+  iniciarPipeline();
+}
+
+function pararCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+// ── PIPELINE: envio + processamento ─────────────────────────
+async function iniciarPipeline() {
+  mostrarView("view-processando");
+  limparAlertaErro();
+  resetarSteps();
+
+  // Step 1: transcricao
+  setStep("step-audio", "active", "Enviando audio...");
+
+  const formData = new FormData();
+  // Extensao correta para iOS
+  const ext = (audioBlob.type.includes("mp4") || audioBlob.type.includes("m4a"))
+    ? "m4a" : "webm";
+  formData.append("audio", audioBlob, `sessao.${ext}`);
+  if (fotoBlob) {
+    formData.append("foto", fotoBlob, "animal.jpg");
+  }
+
+  let resultado;
+  try {
+    setStep("step-audio", "active", "Transcrevendo... pode demorar alguns minutos.");
+
+    const resp = await fetch("/api/processar", {
+      method: "POST",
+      body: formData
+    });
+
+    setStep("step-audio", "done", "Transcricao concluida.");
+    setStep("step-ia", "active", "Analisando a sessao com IA...");
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.erro || `Erro HTTP ${resp.status}`);
+    }
+
+    resultado = await resp.json();
+
+    setStep("step-ia", "done", "Analise concluida.");
+    setStep("step-docs", "active", "Gerando documentos finais...");
+
+    // Pequena pausa visual
+    await new Promise(r => setTimeout(r, 600));
+    setStep("step-docs", "done", "Documentos prontos.");
+
+    // Aguardar mais meio segundo e ir para resultado
+    await new Promise(r => setTimeout(r, 500));
+    mostrarResultado(resultado);
+
+  } catch (err) {
+    setStep("step-audio", "error", "");
+    setStep("step-ia",    "error", "");
+    setStep("step-docs",  "error", "");
+    mostrarAlertaErro("Erro ao processar a sessao:\n" + err.message);
+  }
+}
+
+// ── Resultado ────────────────────────────────────────────────
+function mostrarResultado(dados) {
+  document.getElementById("result-titulo").textContent =
+    `Documentos prontos!`;
+  document.getElementById("result-sub").textContent =
+    `${dados.nome_cao || ""} · ${dados.nome_tutor || ""}`;
+
+  document.getElementById("link-protocolo").href =
+    `/api/download/${encodeURIComponent(dados.protocolo)}`;
+  document.getElementById("link-protocolo").download = dados.protocolo;
+
+  document.getElementById("link-relatorio").href =
+    `/api/download/${encodeURIComponent(dados.relatorio)}`;
+  document.getElementById("link-relatorio").download = dados.relatorio;
+
+  mostrarView("view-resultado");
+}
+
+// ── Nova sessao ───────────────────────────────────────────────
+function novaSessao() {
+  audioBlob  = null; audioChunks = [];
+  fotoBlob   = null; fotoCapturada = false;
+  segundos   = 0; pausado = false;
+  document.getElementById("rec-timer").textContent = "00:00";
+  document.getElementById("rec-status").innerHTML =
+    '<span class="rec-dot"></span>Gravando...';
+  document.getElementById("btn-pausar").textContent = "⏸ Pausar";
+  mostrarView("view-home");
+}
+
+// ── Steps helper ─────────────────────────────────────────────
+function setStep(id, estado, subtexto) {
+  const el = document.getElementById(id);
+  el.classList.remove("active", "done", "error");
+  if (estado) el.classList.add(estado);
+
+  const sub = el.querySelector(".step-sub");
+  if (sub && subtexto !== undefined) sub.textContent = subtexto;
+
+  // Spinner: remover antigo e adicionar se active
+  const spinner = el.querySelector(".spinner");
+  if (spinner) spinner.remove();
+  if (estado === "active") {
+    const s = document.createElement("div");
+    s.className = "spinner";
+    el.appendChild(s);
+  }
+}
+
+function resetarSteps() {
+  ["step-audio", "step-ia", "step-docs"].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove("active", "done", "error");
+    const spinner = el.querySelector(".spinner");
+    if (spinner) spinner.remove();
+  });
+  document.getElementById("step-audio-sub").textContent = "Aguardando...";
+  document.getElementById("step-ia-sub").textContent    = "Aguardando...";
+  document.getElementById("step-docs-sub").textContent  = "Aguardando...";
+}
+
+function mostrarAlertaErro(msg) {
+  const el = document.getElementById("alerta-erro");
+  el.textContent = msg;
+  el.classList.add("show");
+}
+function limparAlertaErro() {
+  const el = document.getElementById("alerta-erro");
+  el.textContent = "";
+  el.classList.remove("show");
+}
+</script>
+
+</body>
+</html>
