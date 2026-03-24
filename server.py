@@ -319,7 +319,7 @@ def transcrever_audio(caminho_audio):
 # ─── GERACAO DE CONTEUDO JSON (identica ao app.py original) ──────────────────
 
 def gerar_protocolo_json(transcript):
-    system = """Voce e um adestrador canino especialista na metodologia Equilibrio dos Reforcamentos (Agile Dog).
+    system = """Voce e um adestrador canino especialista na metodologia Equilibrio dos Reforços (Agile Dog).
 Recebe a transcricao de uma aula pratica ao vivo.
 
 INSTRUCOES:
@@ -355,7 +355,7 @@ Retorne SOMENTE este JSON valido, sem markdown, sem texto antes ou depois:
 
 
 def gerar_relatorio_json(transcript):
-    system = """Voce e um assistente especializado em adestramento canino positivo (Agile Dog).
+    system = """Voce e um assistente especializado em adestramento canino  (Agile Dog).
 Recebe a transcricao de uma aula pratica ao vivo.
 
 INSTRUCOES:
