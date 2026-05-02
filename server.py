@@ -35,7 +35,7 @@ PASTA_SAIDA.mkdir(exist_ok=True)
 app = Flask(__name__, static_folder="static", static_url_path="")
 
 
-# ─── HELPERS DOCX (identicos ao app.py original) ─────────────────────────────
+# ─── HELPERS DOCX ─────────────────────────────────────────────────────────────
 
 def set_cell_bg(cell, hex_color):
     tc   = cell._tc
@@ -109,17 +109,14 @@ def add_step_table(doc, itens):
     if tblPr is None:
         tblPr = OxmlElement("w:tblPr")
         tbl.insert(0, tblPr)
-    # Largura total da tabela
     tblW = OxmlElement("w:tblW")
     tblW.set(qn("w:w"), "8880")
     tblW.set(qn("w:type"), "dxa")
     tblPr.append(tblW)
-    # Layout fixo: garante que as larguras de coluna sejam respeitadas
     tblLayout = OxmlElement("w:tblLayout")
     tblLayout.set(qn("w:type"), "fixed")
     tblPr.append(tblLayout)
     for i, item in enumerate(itens):
-        # Coluna do numero: estreita (600 dxa = ~1.06 cm)
         cell_n = table.cell(i, 0)
         set_cell_bg(cell_n, "E87722")
         set_cell_borders(cell_n, color="E87722")
@@ -133,7 +130,6 @@ def add_step_table(doc, itens):
         p_n.paragraph_format.space_before = Pt(6)
         p_n.paragraph_format.space_after  = Pt(6)
         add_run(p_n, str(i + 1), bold=True, size=12, color=BRANCO)
-        # Coluna do texto: restante
         cell_t = table.cell(i, 1)
         tcPr_t = cell_t._tc.get_or_add_tcPr()
         tcW_t = OxmlElement("w:tcW")
@@ -194,19 +190,14 @@ def build_header_footer(doc):
     add_run(rod, "Agile Dog  •  Desenvolvido por Kaique Rocha  •  v1.0", size=9, color=CINZA)
 
 
-# ─── NOVA FUNCAO: INSERCAO DE FOTO NO DOCUMENTO ──────────────────────────────
+# ─── INSERCAO DE FOTO NO DOCUMENTO ───────────────────────────────────────────
 
 def inserir_foto_protocolo(doc, foto_bytes):
-    """
-    Insere foto do animal: recorte quadrado centralizado, moldura elegante azul.
-    """
     img = PILImage.open(BytesIO(foto_bytes))
 
-    # Converter para RGB
     if img.mode in ("RGBA", "P", "LA"):
         img = img.convert("RGB")
 
-    # Corrigir orientacao EXIF (fotos de celular)
     try:
         import PIL.ExifTags
         exif = img._getexif()
@@ -220,25 +211,19 @@ def inserir_foto_protocolo(doc, foto_bytes):
     except Exception:
         pass
 
-    # Recorte quadrado centralizado
     w, h = img.size
     lado = min(w, h)
     esq  = (w - lado) // 2
     top  = (h - lado) // 2
     img  = img.crop((esq, top, esq + lado, top + lado))
+    img  = img.resize((600, 600), PILImage.LANCZOS)
 
-    # Redimensionar para 600x600
-    img = img.resize((600, 600), PILImage.LANCZOS)
-
-    # Salvar em temp
     tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
     img.save(tmp.name, "JPEG", quality=90)
     tmp.close()
 
-    # Moldura elegante: tabela 3x3 simulando padding + borda dupla
     add_space(doc, 6)
 
-    # Tabela externa (borda laranja fina)
     t_ext = doc.add_table(rows=1, cols=1)
     t_ext.style = "Table Grid"
     c_ext = t_ext.cell(0, 0)
@@ -250,19 +235,16 @@ def inserir_foto_protocolo(doc, foto_bytes):
     tcW_e.set(qn("w:type"), "dxa")
     tcPr_e.append(tcW_e)
 
-    # Paragrafo interno com a imagem
     p_ext = c_ext.paragraphs[0]
     p_ext.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_ext.paragraph_format.space_before = Pt(4)
     p_ext.paragraph_format.space_after  = Pt(4)
 
-    # Tabela interna (fundo branco, moldura azul escuro)
     t_int = doc.add_table(rows=1, cols=1)
     t_int.style = "Table Grid"
     c_int = t_int.cell(0, 0)
     set_cell_bg(c_int, "FFFFFF")
 
-    # Borda azul mais grossa
     tc_int    = c_int._tc
     tcPr_int  = tc_int.get_or_add_tcPr()
     tcBorders = OxmlElement("w:tcBorders")
@@ -289,7 +271,6 @@ def inserir_foto_protocolo(doc, foto_bytes):
 
     os.unlink(tmp.name)
 
-    # Centralizar as duas tabelas
     for t in [t_ext, t_int]:
         tbl   = t._tbl
         tblPr = tbl.find(qn("w:tblPr"))
@@ -303,7 +284,7 @@ def inserir_foto_protocolo(doc, foto_bytes):
     add_space(doc, 8)
 
 
-# ─── TRANSCRICAO (identica ao app.py original) ───────────────────────────────
+# ─── TRANSCRICAO ─────────────────────────────────────────────────────────────
 
 def transcrever_audio(caminho_audio):
     with open(caminho_audio, "rb") as f:
@@ -316,7 +297,7 @@ def transcrever_audio(caminho_audio):
     return result
 
 
-# ─── GERACAO DE CONTEUDO JSON (identica ao app.py original) ──────────────────
+# ─── GERACAO DE CONTEUDO JSON ─────────────────────────────────────────────────
 
 def gerar_protocolo_json(transcript):
     system = """Voce e um adestrador canino especialista na metodologia Equilibrio dos Reforços (Agile Dog).
@@ -354,39 +335,7 @@ Retorne SOMENTE este JSON valido, sem markdown, sem texto antes ou depois:
     return json.loads(raw)
 
 
-def gerar_relatorio_json(transcript):
-    system = """Voce e um assistente especializado em adestramento canino  (Agile Dog).
-Recebe a transcricao de uma aula pratica ao vivo.
-
-INSTRUCOES:
-- Extraia o nome do cao e do tutor da transcricao
-- IGNORE comentarios casuais e conversas paralelas
-- Crie secoes: Resumo da Aula, Comportamentos Trabalhados, Evolucao Observada, Pontos de Atencao, Proximos Passos
-- Use tipo "texto" para resumos e "lista" para itens enumeraveis
-- Linguagem acessivel, tom encorajador
-
-Retorne SOMENTE este JSON valido, sem markdown, sem texto antes ou depois:
-{
-  "nome_cao": "string",
-  "nome_tutor": "string",
-  "subtitulo": "string",
-  "secoes": [
-    {"titulo": "string", "tipo": "texto|lista", "conteudo": "string", "itens": ["string"]}
-  ],
-  "fechamento": "string"
-}"""
-
-    resposta = client.messages.create(
-        model="claude-sonnet-4-5", max_tokens=3000, system=system,
-        messages=[{"role": "user", "content": f"Transcricao:\n\n{transcript}"}]
-    )
-    raw = resposta.content[0].text.strip()
-    raw = raw.replace("```json", "").replace("```", "").strip()
-    raw = raw[raw.find("{"):raw.rfind("}")+1]
-    return json.loads(raw)
-
-
-# ─── GERACAO DOCX (salvar_protocolo expandido com foto opcional) ──────────────
+# ─── GERACAO DOCX ─────────────────────────────────────────────────────────────
 
 def salvar_protocolo(dados, nome_arquivo, foto_bytes=None):
     doc = Document()
@@ -420,7 +369,6 @@ def salvar_protocolo(dados, nome_arquivo, foto_bytes=None):
     add_run(p_info, f"{nome_cao}  |  {nome_tutor}  |  {date.today().strftime('%d/%m/%Y')}",
             size=10, color=CINZA)
 
-    # ── FOTO: inserida na area de identificacao, apenas se disponivel ──
     if foto_bytes:
         inserir_foto_protocolo(doc, foto_bytes)
 
@@ -460,55 +408,6 @@ def salvar_protocolo(dados, nome_arquivo, foto_bytes=None):
     doc.save(nome_arquivo)
 
 
-def salvar_relatorio(dados, nome_arquivo):
-    doc = Document()
-    for section in doc.sections:
-        section.top_margin    = Cm(2)
-        section.bottom_margin = Cm(2)
-        section.left_margin   = Cm(2.5)
-        section.right_margin  = Cm(2.5)
-
-    build_header_footer(doc)
-
-    nome_cao   = dados.get("nome_cao",   "Nao identificado")
-    nome_tutor = dados.get("nome_tutor", "Nao identificado")
-
-    add_space(doc, 6)
-    p_titulo = doc.add_paragraph()
-    p_titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_titulo.paragraph_format.space_after = Pt(2)
-    add_run(p_titulo, "Relatorio de Desempenho", bold=True, size=18, color=AZUL)
-
-    subtitulo = dados.get("subtitulo", "")
-    if subtitulo:
-        p_sub = doc.add_paragraph()
-        p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_sub.paragraph_format.space_after = Pt(6)
-        add_run(p_sub, subtitulo, bold=True, size=13, color=AZUL)
-
-    p_info = doc.add_paragraph()
-    p_info.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_info.paragraph_format.space_after = Pt(10)
-    add_run(p_info, f"{nome_cao}  |  {nome_tutor}  |  {date.today().strftime('%d/%m/%Y')}",
-            size=10, color=CINZA)
-
-    for i, secao in enumerate(dados.get("secoes", []), 1):
-        add_section_title(doc, secao.get("titulo", ""), numero=i)
-        tipo = secao.get("tipo", "texto")
-        if tipo == "lista":
-            add_bullet_list(doc, secao.get("itens", []))
-        else:
-            add_text_block(doc, secao.get("conteudo", ""))
-
-    fechamento = dados.get("fechamento", "")
-    if fechamento:
-        add_space(doc, 8)
-        p = doc.add_paragraph()
-        add_run(p, fechamento, bold=True, size=11)
-
-    doc.save(nome_arquivo)
-
-
 # ─── ROTAS FLASK ─────────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -527,25 +426,17 @@ def service_worker():
 
 @app.route("/api/processar", methods=["POST"])
 def processar():
-    """
-    Recebe:
-      - audio: arquivo de audio (multipart/form-data)
-      - foto:  arquivo de imagem opcional (multipart/form-data)
-    Retorna JSON com IDs dos documentos gerados.
-    """
     if "audio" not in request.files:
         return jsonify({"erro": "Arquivo de audio nao enviado."}), 400
 
     audio_file = request.files["audio"]
     foto_file  = request.files.get("foto")
 
-    # Salvar audio em temp
     sufixo_audio = Path(audio_file.filename).suffix or ".mp4"
     tmp_audio = tempfile.NamedTemporaryFile(suffix=sufixo_audio, delete=False)
     audio_file.save(tmp_audio.name)
     tmp_audio.close()
 
-    # Ler foto se enviada
     foto_bytes = None
     if foto_file and foto_file.filename:
         foto_bytes = foto_file.read()
@@ -554,31 +445,27 @@ def processar():
         # 1. Transcricao
         transcript = transcrever_audio(tmp_audio.name)
 
-        # 2. Gerar JSONs via Claude
+        # 2. Gerar JSON via Claude
         dados_prot = gerar_protocolo_json(transcript)
-        dados_rel  = gerar_relatorio_json(transcript)
 
         nome_cao   = dados_prot.get("nome_cao",   "Cao")
         nome_tutor = dados_prot.get("nome_tutor", "Tutor")
 
-        # 3. Nomes de arquivo
+        # 3. Nome de arquivo
         data_hoje = date.today().strftime("%Y%m%d")
         nome_base = nome_cao.replace(" ", "_")
         sessao_id = str(uuid.uuid4())[:8]
 
         path_prot = PASTA_SAIDA / f"protocolo_{nome_base}_{data_hoje}_{sessao_id}.docx"
-        path_rel  = PASTA_SAIDA / f"relatorio_{nome_base}_{data_hoje}_{sessao_id}.docx"
 
-        # 4. Gerar documentos
+        # 4. Gerar documento
         salvar_protocolo(dados_prot, str(path_prot), foto_bytes=foto_bytes)
-        salvar_relatorio(dados_rel,  str(path_rel))
 
         return jsonify({
-            "ok":        True,
-            "nome_cao":  nome_cao,
+            "ok":         True,
+            "nome_cao":   nome_cao,
             "nome_tutor": nome_tutor,
-            "protocolo": path_prot.name,
-            "relatorio": path_rel.name,
+            "protocolo":  path_prot.name,
         })
 
     except Exception as e:
@@ -591,7 +478,6 @@ def processar():
 
 @app.route("/api/download/<nome_arquivo>")
 def download(nome_arquivo):
-    """Serve o arquivo gerado para download."""
     caminho = PASTA_SAIDA / nome_arquivo
     if not caminho.exists():
         return jsonify({"erro": "Arquivo nao encontrado."}), 404
