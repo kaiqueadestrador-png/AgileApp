@@ -1,4 +1,4 @@
-const CACHE = "agiledog-v1";
+const CACHE = "agiledog-v3";
 const ASSETS = ["/", "/manifest.json"];
 
 self.addEventListener("install", e => {
@@ -16,9 +16,6 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  // Nao cachear chamadas de API
   if (e.request.url.includes("/api/")) return;
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
-  );
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
